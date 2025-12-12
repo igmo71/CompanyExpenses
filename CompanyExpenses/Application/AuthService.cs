@@ -7,7 +7,7 @@ namespace CompanyExpenses.Application
     public class AuthService(
         BitrixService bitrixService,
         UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager, 
+        SignInManager<ApplicationUser> signInManager,
         IUserStore<ApplicationUser> userStore,
         ILogger<AuthService> logger)
     {

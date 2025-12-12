@@ -1,5 +1,3 @@
-using System.Security.Claims;
-using System.Text.Json;
 using CompanyExpenses.Components.Account.Pages;
 using CompanyExpenses.Components.Account.Pages.Manage;
 using CompanyExpenses.Data;
@@ -10,6 +8,8 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace Microsoft.AspNetCore.Routing
 {

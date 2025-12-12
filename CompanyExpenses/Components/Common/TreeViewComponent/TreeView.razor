@@ -34,10 +34,10 @@
 
 
 @code {
-	[Parameter]	public List<TNode>? Items { get; set; }
-	[Parameter]	public RenderFragment<TNode>? Template { get; set; }
+	[Parameter] public List<TNode>? Items { get; set; }
+	[Parameter] public RenderFragment<TNode>? Template { get; set; }
 	[Parameter] public EventCallback OmItemCreate { get; set; }
-	[Parameter]	public EventCallback<TNode> OmItemSelected { get; set; }
+	[Parameter] public EventCallback<TNode> OmItemSelected { get; set; }
 	[Parameter] public EventCallback<TNode> OmItemChanged { get; set; }
 
 	private List<TNode>? tree;
@@ -53,9 +53,17 @@
 		if (Items is null)
 			return;
 
-		await RestoreTreeState();
-
 		tree = TreeHelper.BuildTree(Items);
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await RestoreTreeState();
+
+			StateHasChanged();
+		}
 	}
 
 	private async Task RestoreTreeState()

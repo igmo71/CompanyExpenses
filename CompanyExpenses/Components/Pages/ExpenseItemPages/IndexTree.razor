@@ -2,10 +2,12 @@
 @using CompanyExpenses.Components.Common.TreeViewComponent
 @using CompanyExpenses.Data
 @using CompanyExpenses.Domain
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @implements IAsyncDisposable
 @inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
 @inject NavigationManager NavigationManager
+@attribute [Authorize]
 
 <h3>Статьи Затрат</h3>
 
