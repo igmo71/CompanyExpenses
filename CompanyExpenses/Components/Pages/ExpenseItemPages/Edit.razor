@@ -1,0 +1,94 @@
+﻿@page "/expenseitems/edit"
+@using Microsoft.EntityFrameworkCore
+@using CompanyExpenses.Domain
+@inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>ExpenseItem</h2>
+<hr />
+@if (ExpenseItem is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="ExpenseItem" OnValidSubmit="UpdateExpenseItem" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert"/>
+                <input type="hidden" name="ExpenseItem.Id" value="@ExpenseItem.Id" />
+                <div class="mb-3">
+                    <label for="parentid" class="form-label">ParentId:</label>
+                    <InputText id="parentid" @bind-Value="ExpenseItem.ParentId" class="form-control" />
+                    <ValidationMessage For="() => ExpenseItem.ParentId" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name:</label>
+                    <InputText id="name" @bind-Value="ExpenseItem.Name" class="form-control" />
+                    <ValidationMessage For="() => ExpenseItem.Name" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/expenseitems">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private ExpenseItem? ExpenseItem { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        ExpenseItem ??= await context.ExpenseItems.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (ExpenseItem is null)
+        {
+            NavigationManager.NotFound();
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateExpenseItem()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(ExpenseItem!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!ExpenseItemExists(ExpenseItem!.Id))
+            {
+                NavigationManager.NotFound();
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/expenseitems");
+    }
+
+    private bool ExpenseItemExists(string id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.ExpenseItems.Any(e => e.Id == id);
+    }
+}

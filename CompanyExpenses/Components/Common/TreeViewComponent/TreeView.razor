@@ -1,0 +1,132 @@
+﻿@using CompanyExpenses.Abstractions
+@using CompanyExpenses.Common
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedSessionStorage ProtectedSessionStore
+@typeparam TNode where TNode : class, ITree<TNode>
+
+<div class="card">
+	<div class="card-body">
+		<div class="d-flex justify-content-between mb-1">
+			<button class="btn btn-sm rounded-pill ms-3" @onclick="ToggleExpandeAll">
+				<i class="bi @(expandedAll ? "bi-arrows-collapse" : "bi-arrows-expand")"></i>
+				<span class="ms-1">@((expandedAll) ? "Свернуть" : "Развернуть")</span>
+			</button>
+			<button class="btn btn-sm btn-outline-primary rounded-pill" @onclick="OmItemCreate">
+				<i class="bi bi-plus-circle"></i><span class="ms-1">Создать</span>
+			</button>
+		</div>
+		@if (tree != null)
+		{
+			<ul class="list-group">
+				@foreach (var node in tree)
+				{
+					<TreeNode @key="node.Id" TNode="TNode" Node="node" Template="Template"
+							  OnSelect="SelectNode" OnToggleExpand="ToggleExpandNode"
+							  OnDragStart="DragStart" OnDragEnter="DragEnter" OnDrop="DropNode"
+							  DraggedNode="@draggedNode" DraggedNodeDescendants="@draggedNodeDescendants"
+							  HoveredNode="@hoveredNode" SelectedNodeId="@treeState.SelectedNode" />
+				}
+			</ul>
+		}
+	</div>
+</div>
+
+
+@code {
+	[Parameter]	public List<TNode>? Items { get; set; }
+	[Parameter]	public RenderFragment<TNode>? Template { get; set; }
+	[Parameter] public EventCallback OmItemCreate { get; set; }
+	[Parameter]	public EventCallback<TNode> OmItemSelected { get; set; }
+	[Parameter] public EventCallback<TNode> OmItemChanged { get; set; }
+
+	private List<TNode>? tree;
+	private TreeState treeState = new();
+	private bool expandedAll;
+
+	private TNode? draggedNode;
+	private List<TNode>? draggedNodeDescendants;
+	private TNode? hoveredNode;
+
+	protected override void OnInitialized()
+	{
+		if (Items is null)
+			return;
+
+		tree = TreeHelper.BuildTree(Items);
+	}
+
+	private async Task SelectNode(TNode node)
+	{
+		treeState.SelectedNode = node.Id;
+
+		await OmItemSelected.InvokeAsync(node);
+
+		_ = ProtectedSessionStore.SetAsync(nameof(treeState), treeState);
+	}
+
+	private async Task ToggleExpandNode(TNode node)
+	{
+		if (Items is null)
+			return;
+
+		node.Expanded = !node.Expanded;
+
+		if (node.Expanded)
+			treeState.ExpandedNodes.Add(node.Id);
+		else
+			treeState.ExpandedNodes.Remove(node.Id);
+
+		expandedAll = Items.All(e => e.Expanded);
+
+		_ = ProtectedSessionStore.SetAsync(nameof(treeState), treeState);
+	}
+
+	private async Task ToggleExpandeAll()
+	{
+		if (Items is null)
+			return;
+
+		expandedAll = !expandedAll;
+
+		treeState.ExpandedNodes.Clear();
+
+		foreach (var item in Items)
+		{
+			item.Expanded = expandedAll;
+			if (expandedAll)
+				treeState.ExpandedNodes.Add(item.Id);
+		}
+
+		_ = ProtectedSessionStore.SetAsync(nameof(treeState), treeState);
+	}
+
+	private void DragStart(TNode node)
+	{
+		draggedNode = node;
+
+		draggedNodeDescendants = TreeHelper.GetDescendantsOf(node);
+	}
+
+	private void DragEnter(TNode node)
+	{
+		hoveredNode = node;
+	}
+
+	private async Task DropNode(TNode targetNode)
+	{
+		if (Items is null || draggedNode is null || draggedNode == targetNode ||
+			(draggedNodeDescendants is not null && draggedNodeDescendants.Contains(targetNode)))
+		{
+			hoveredNode = null;
+			return;
+		}
+
+		draggedNode.ParentId = targetNode.Id;
+
+		await OmItemChanged.InvokeAsync(draggedNode);
+
+		tree = TreeHelper.BuildTree(Items);
+
+		hoveredNode = null;
+	}
+}

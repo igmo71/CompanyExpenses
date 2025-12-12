@@ -1,0 +1,94 @@
+﻿@using CompanyExpenses.Abstractions
+@typeparam TNode where TNode : class, ITree<TNode>
+
+@if (Node != null)
+{
+	<li class="list-group-item border-0 py-0 pe-0 pb-0">
+		<div draggable="true"
+			 @ondragover:preventDefault="true"
+			 @ondragstart="() => OnDragStart.InvokeAsync(Node)"
+			 @ondragenter="() => OnDragEnter.InvokeAsync(Node)"
+			 @ondrop="() => OnDrop.InvokeAsync(Node)">
+			<div class="d-flex flex-row">
+				<div class="btn-group">
+					<div class="btn py-1" @onclick="() => OnToggleExpand.InvokeAsync(Node)">
+						<i class="@(Node.Expanded ? "bi bi-chevron-down" : "bi bi-chevron-right")" />
+					</div>
+					@if (Template is not null)
+					{
+						<div class="@GetNodeClass()" @onclick="() => SelectNode(Node)" @onmouseover="OnMouseOver" @onmouseout="OnMouseOut">
+							<div class="@bgColor">
+								@Template(Node)
+							</div>
+						</div>
+					}
+				</div>
+			</div>
+		</div>
+
+		@if (Node.Expanded && Node.Children.Count > 0)
+		{
+			<ul class="list-group">
+				@foreach (var child in Node.Children)
+				{
+					<TreeNode @key="child.Id" TNode="TNode"
+							  Node="child"
+							  Template="Template"
+							  OnSelect="SelectNode"
+							  OnToggleExpand="OnToggleExpand"
+							  OnDragStart="OnDragStart"
+							  OnDragEnter="OnDragEnter"
+							  OnDrop="OnDrop"
+							  HoveredNode="@HoveredNode"
+							  DraggedNode="@DraggedNode"
+							  DraggedNodeDescendants="@DraggedNodeDescendants"
+							  SelectedNodeId="@SelectedNodeId" />
+				}
+			</ul>
+		}
+	</li>
+}
+
+@code {
+	[Parameter] public TNode? Node { get; set; }
+	[Parameter] public RenderFragment<TNode>? Template { get; set; }
+	[Parameter] public EventCallback<TNode> OnSelect { get; set; }
+	[Parameter] public EventCallback<TNode> OnToggleExpand { get; set; }
+	[Parameter] public EventCallback<TNode> OnDragStart { get; set; }
+	[Parameter] public EventCallback<TNode> OnDragEnter { get; set; }
+	[Parameter] public EventCallback<TNode> OnDrop { get; set; }
+	[Parameter] public TNode? HoveredNode { get; set; }
+	[Parameter] public TNode? DraggedNode { get; set; }
+	[Parameter] public List<TNode>? DraggedNodeDescendants { get; set; }
+	[Parameter] public string? SelectedNodeId { get; set; }
+
+	private string bgColor = string.Empty;
+
+	private async Task SelectNode(TNode node)
+	{
+		bgColor = string.Empty;
+		await OnSelect.InvokeAsync(node);
+	}
+
+	void OnMouseOver() => bgColor = "bg-body-tertiary";
+	void OnMouseOut() => bgColor = string.Empty;
+
+	private string GetNodeClass()
+	{
+		if (Node is null)
+			return string.Empty;
+
+		if (HoveredNode is null && Node.Id == SelectedNodeId)
+			return "bg-body-secondary";
+
+		if (HoveredNode == Node)
+		{
+			if (DraggedNodeDescendants is not null && DraggedNodeDescendants.Contains(Node))
+				return "border border-2 border-danger-subtle";
+
+			return "border border-2 border-success-subtle";
+		}
+
+		return string.Empty;
+	}
+}

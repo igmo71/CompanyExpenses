@@ -1,0 +1,59 @@
+﻿@page "/expenseitems/delete"
+@using Microsoft.EntityFrameworkCore
+@using CompanyExpenses.Domain
+@inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Delete</PageTitle>
+
+<h1>Delete</h1>
+
+<p>Are you sure you want to delete this?</p>
+<div>
+    <h2>ExpenseItem</h2>
+    <hr />
+    @if (expenseitem is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">ParentId</dt>
+            <dd class="col-sm-10">@expenseitem.ParentId</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Name</dt>
+            <dd class="col-sm-10">@expenseitem.Name</dd>
+        </dl>
+        <EditForm method="post" Model="expenseitem" OnValidSubmit="DeleteExpenseItem" FormName="delete" Enhance>
+            <button type="submit" class="btn btn-danger" disabled="@(expenseitem is null)">Delete</button> |
+            <a href="/expenseitems">Back to List</a>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private ExpenseItem? expenseitem;
+
+    [SupplyParameterFromQuery]
+    private string Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        expenseitem = await context.ExpenseItems.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (expenseitem is null)
+        {
+            NavigationManager.NotFound();
+        }
+    }
+
+    private async Task DeleteExpenseItem()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.ExpenseItems.Remove(expenseitem!);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/expenseitems");
+    }
+}

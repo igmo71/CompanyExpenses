@@ -1,0 +1,51 @@
+﻿@page "/expenseitems/create"
+@using Microsoft.EntityFrameworkCore
+@using CompanyExpenses.Domain
+@inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>ExpenseItem</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="ExpenseItem" OnValidSubmit="AddExpenseItem" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="parentid" class="form-label">ParentId:</label> 
+                <InputText id="parentid" @bind-Value="ExpenseItem.ParentId" class="form-control" /> 
+                <ValidationMessage For="() => ExpenseItem.ParentId" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label> 
+                <InputText id="name" @bind-Value="ExpenseItem.Name" class="form-control" /> 
+                <ValidationMessage For="() => ExpenseItem.Name" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/expenseitems">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private ExpenseItem ExpenseItem { get; set; } = default!;
+
+    protected override void OnInitialized() => ExpenseItem ??= new(){Id = Guid.CreateVersion7().ToString()};
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddExpenseItem()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.ExpenseItems.Add(ExpenseItem);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/expenseitems");
+    }
+}

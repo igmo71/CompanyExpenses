@@ -1,0 +1,37 @@
+﻿@page "/expenseitems"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using CompanyExpenses.Domain
+@using CompanyExpenses.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+<p>
+    <a href="expenseitems/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.ExpenseItems">
+    <PropertyColumn Property="expenseitem => expenseitem.ParentId" />
+    <PropertyColumn Property="expenseitem => expenseitem.Name" />
+
+    <TemplateColumn Context="expenseitem">
+        <a href="@($"expenseitems/edit?id={expenseitem.Id}")">Edit</a> |
+        <a href="@($"expenseitems/details?id={expenseitem.Id}")">Details</a> |
+        <a href="@($"expenseitems/delete?id={expenseitem.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private ApplicationDbContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

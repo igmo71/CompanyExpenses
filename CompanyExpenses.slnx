@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="Integration.Bitrix/Integration.Bitrix.csproj" />
   <Project Path="CompanyExpenses/CompanyExpenses.csproj" />
+  <Project Path="Integration.Bitrix/Integration.Bitrix.csproj" />
 </Solution>

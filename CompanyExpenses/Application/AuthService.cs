@@ -85,7 +85,7 @@ namespace CompanyExpenses.Application
         {
             IdentityResult identityResult = bitrixUser.WORK_DEPARTMENT switch
             {
-                "Отдел продаж" => await userManager.AddToRoleAsync(user, "Sale"),
+                "Отдел продаж" => await userManager.AddToRoleAsync(user, "Sales"),
                 "Бухгалтерия" => await userManager.AddToRoleAsync(user, "Accounting"),
                 _ => await userManager.AddToRoleAsync(user, "User")
             };

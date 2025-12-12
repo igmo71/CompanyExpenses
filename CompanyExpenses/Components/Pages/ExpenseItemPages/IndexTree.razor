@@ -1,0 +1,64 @@
+﻿@page "/expenseitemstree"
+@using CompanyExpenses.Components.Common.TreeViewComponent
+@using CompanyExpenses.Data
+@using CompanyExpenses.Domain
+@using Microsoft.EntityFrameworkCore
+@implements IAsyncDisposable
+@inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<h3>IndexTree</h3>
+
+<div class="row">
+	<div class="col-auto">
+		<TreeView TNode="ExpenseItem" Items="expenseItems" OmItemCreate="CreateItem" OmItemSelected="ItemSelected" OmItemChanged="ItemChanged">
+			<Template Context="item">
+				<div class="btn py-1 text-start">@item.Name</div>
+				<div class="btn dropdown-toggle py-1" data-bs-toggle="dropdown">
+					<i class="bi bi-list"></i>
+				</div>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" href="/expenseitems/edit?Id=@item.Id"><i class="bi bi-pencil text-warning"></i> Изменить</a></li>
+					<li><a class="dropdown-item" href="/expenseitems/delete?Id=@item.Id"><i class="bi bi-trash3 text-danger"></i> Удалить</a></li>
+					<li><hr class="dropdown-divider"></li>
+					<li><a class="dropdown-item" href="/expenseitems/create?ParentId=@item.Id"><i class="bi bi-node-plus text-primary"></i> Добавить</a></li>
+				</ul>
+			</Template>
+		</TreeView>
+	</div>
+</div>
+
+
+<div>Selected: @selectedItem?.Name</div>
+
+@code {
+	private ApplicationDbContext context = default!;
+	private List<ExpenseItem>? expenseItems;
+	private ExpenseItem? selectedItem;
+
+	protected override void OnInitialized()
+	{
+		context = DbFactory.CreateDbContext();
+
+		expenseItems = context.ExpenseItems.ToList();
+	}
+
+	private void ItemSelected(ExpenseItem item)
+	{
+		selectedItem = item;
+	}
+
+	private void ItemChanged(ExpenseItem item)
+	{
+		context.ExpenseItems.Update(item);
+
+		context.SaveChanges();
+	}
+
+	private void CreateItem()
+	{
+		NavigationManager.NavigateTo("expenseitems/create");
+	}
+
+	public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}
