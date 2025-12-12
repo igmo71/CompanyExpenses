@@ -4,6 +4,7 @@ using CompanyExpenses.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace CompanyExpenses
 {
@@ -13,7 +14,12 @@ namespace CompanyExpenses
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .CreateLogger();
+
+            builder.Services.AddSerilog();
+
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
 
