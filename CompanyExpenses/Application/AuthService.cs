@@ -1,0 +1,123 @@
+﻿using CompanyExpenses.Data;
+using Integration.Bitrix;
+using Microsoft.AspNetCore.Identity;
+
+namespace CompanyExpenses.Application
+{
+    public class AuthService(
+        BitrixService bitrixService,
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager, 
+        IUserStore<ApplicationUser> userStore,
+        ILogger<AuthService> logger)
+    {
+        public async Task<SignInResult> PasswordSignInAsync(string userName, string password, bool isPersistent, bool lockoutOnFailure = false)
+        {
+
+            var bitrixUser = await bitrixService.GetUserAsync(userName, password);
+
+            if (bitrixUser == null || string.IsNullOrEmpty(bitrixUser.EMAIL))
+                return SignInResult.Failed;
+
+            var appUser = await FindByEmailAsync(bitrixUser.EMAIL);
+
+            if (appUser == null)
+            {
+                appUser = await RegisterUserAsync(bitrixUser, password);
+
+                await AddToRoleAsync(appUser, bitrixUser);
+            }
+
+            if (string.IsNullOrEmpty(appUser.UserName))
+                return SignInResult.Failed;
+
+            var result = await signInManager.PasswordSignInAsync(appUser.UserName, password, isPersistent, lockoutOnFailure);
+
+            return result;
+        }
+
+        public async Task<ApplicationUser?> FindByEmailAsync(string email)
+        {
+            var appUser = await userManager.FindByEmailAsync(email);
+
+            return appUser;
+        }
+
+        public async Task<ApplicationUser> RegisterUserAsync(BitrixUser bitrixUser, string password)
+        {
+            var user = CreateUser();
+
+            user.FirstName = bitrixUser.NAME;
+            user.MiddleName = bitrixUser.SECOND_NAME;
+            user.LastName = bitrixUser.LAST_NAME;
+            user.BitrixId = bitrixUser.ID;
+
+            await userStore.SetUserNameAsync(user, bitrixUser.EMAIL, CancellationToken.None);
+
+            var emailStore = GetEmailStore();
+
+            await emailStore.SetEmailAsync(user, bitrixUser.EMAIL, CancellationToken.None);
+
+            var result = await userManager.CreateAsync(user, password);
+
+            if (!result.Succeeded)
+            {
+                logger.LogError("{Source} {Operation} {@Errors}",
+                    nameof(RegisterUserAsync), nameof(userManager.CreateAsync), result.Errors);
+                throw new InvalidOperationException("Failed to create a user");
+            }
+
+            if (userManager.Options.SignIn.RequireConfirmedAccount)
+            {
+                var code = await userManager.GenerateEmailConfirmationTokenAsync(user);
+
+                result = await userManager.ConfirmEmailAsync(user, code);
+
+                if (!result.Succeeded)
+                    logger.LogError("{Source} {Operation} {@Errors}",
+                        nameof(RegisterUserAsync), nameof(userManager.ConfirmEmailAsync), result.Errors);
+            }
+
+            return user;
+        }
+
+        private async Task AddToRoleAsync(ApplicationUser user, BitrixUser bitrixUser)
+        {
+            IdentityResult identityResult = bitrixUser.WORK_DEPARTMENT switch
+            {
+                "Отдел продаж" => await userManager.AddToRoleAsync(user, "Sale"),
+                "Бухгалтерия" => await userManager.AddToRoleAsync(user, "Accounting"),
+                _ => await userManager.AddToRoleAsync(user, "User")
+            };
+
+            if (!identityResult.Succeeded)
+            {
+                logger.LogError("{Source} {Operation} {@Errors}",
+                    nameof(RegisterUserAsync), nameof(userManager.CreateAsync), identityResult.Errors);
+                throw new InvalidOperationException("Failed to add user to role");
+            }
+        }
+
+        private ApplicationUser CreateUser()
+        {
+            try
+            {
+                return Activator.CreateInstance<ApplicationUser>();
+            }
+            catch
+            {
+                throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
+                    $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
+            }
+        }
+
+        private IUserEmailStore<ApplicationUser> GetEmailStore()
+        {
+            if (!userManager.SupportsUserEmail)
+            {
+                throw new NotSupportedException("The default UI requires a user store with email support.");
+            }
+            return (IUserEmailStore<ApplicationUser>)userStore;
+        }
+    }
+}
