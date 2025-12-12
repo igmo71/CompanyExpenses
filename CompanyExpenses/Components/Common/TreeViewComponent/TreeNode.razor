@@ -10,19 +10,20 @@
 			 @ondragenter="() => OnDragEnter.InvokeAsync(Node)"
 			 @ondrop="() => OnDrop.InvokeAsync(Node)">
 			<div class="d-flex flex-row">
-				<div class="btn-group">
-					<div class="btn py-1" @onclick="() => OnToggleExpand.InvokeAsync(Node)">
-						<i class="@(Node.Expanded ? "bi bi-chevron-down" : "bi bi-chevron-right")" />
-					</div>
-					@if (Template is not null)
-					{
-						<div class="@GetNodeClass()" @onclick="() => SelectNode(Node)" @onmouseover="OnMouseOver" @onmouseout="OnMouseOut">
-							<div class="@bgColor">
-								@Template(Node)
-							</div>
-						</div>
-					}
+				<div class="btn py-1" @onclick="() => OnToggleExpand.InvokeAsync(Node)">
+					<i class="@(Node.Expanded ? "bi bi-chevron-down" : "bi bi-chevron-right")" />
 				</div>
+				@if (Template is not null)
+				{
+					<div class="@GetNodeClass()"
+						 @onclick="() => SelectNode(Node)"
+						 @onmouseover="OnMouseOver"
+						 @onmouseout="OnMouseOut">
+						<div class="@bgColor">
+							@Template(Node)
+						</div>
+					</div>
+				}
 			</div>
 		</div>
 

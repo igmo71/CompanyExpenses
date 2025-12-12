@@ -7,13 +7,13 @@
 <div class="card">
 	<div class="card-body">
 		<div class="d-flex justify-content-between mb-1">
-			<button class="btn btn-sm rounded-pill ms-3" @onclick="ToggleExpandeAll">
+			<div class="btn btn-sm rounded-pill ms-3" @onclick="ToggleExpandeAll">
 				<i class="bi @(expandedAll ? "bi-arrows-collapse" : "bi-arrows-expand")"></i>
 				<span class="ms-1">@((expandedAll) ? "Свернуть" : "Развернуть")</span>
-			</button>
-			<button class="btn btn-sm btn-outline-primary rounded-pill" @onclick="OmItemCreate">
+			</div>
+			<div class="btn btn-sm btn-outline-primary rounded-pill" @onclick="OmItemCreate">
 				<i class="bi bi-plus-circle"></i><span class="ms-1">Создать</span>
-			</button>
+			</div>
 		</div>
 		@if (tree != null)
 		{
