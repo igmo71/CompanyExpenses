@@ -1,14 +1,16 @@
 ﻿@page "/expenseitems/edit"
+@using CompanyExpenses.Data
 @using Microsoft.EntityFrameworkCore
 @using CompanyExpenses.Domain
+@implements IAsyncDisposable
 @inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Edit</PageTitle>
+<PageTitle>Изменить</PageTitle>
 
-<h1>Edit</h1>
+<h1>Изменить</h1>
 
-<h2>ExpenseItem</h2>
+<h2>Статью Затрат</h2>
 <hr />
 @if (ExpenseItem is null)
 {
@@ -23,41 +25,44 @@ else
                 <ValidationSummary role="alert"/>
                 <input type="hidden" name="ExpenseItem.Id" value="@ExpenseItem.Id" />
                 <div class="mb-3">
-                    <label for="parentid" class="form-label">ParentId:</label>
-                    <InputText id="parentid" @bind-Value="ExpenseItem.ParentId" class="form-control" />
-                    <ValidationMessage For="() => ExpenseItem.ParentId" class="text-danger" />
+                    <label for="parentid" class="form-label">@(parent is null ? string.Empty : "Родительская статья:")</label>
+                    <input id="parentid" value="@(parent is null ? "Это верхний уровень" : parent?.Name)" class="form-control" disabled />
                 </div>
                 <div class="mb-3">
-                    <label for="name" class="form-label">Name:</label>
+                    <label for="name" class="form-label">Эта статья:</label>
                     <InputText id="name" @bind-Value="ExpenseItem.Name" class="form-control" />
                     <ValidationMessage For="() => ExpenseItem.Name" class="text-danger" />
                 </div>
-                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button> |
+                <a href="/expenseitems">Назад</a>
             </EditForm>
         </div>
     </div>
 }
 
-<div>
-    <a href="/expenseitems">Back to List</a>
-</div>
-
 @code {
     [SupplyParameterFromQuery]
-    private string Id { get; set; }
+    private string? Id { get; set; }
 
     [SupplyParameterFromForm]
     private ExpenseItem? ExpenseItem { get; set; }
 
+    private ApplicationDbContext context = default!;
+    private ExpenseItem? parent;
+
+
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
+        context = DbFactory.CreateDbContext();
+
         ExpenseItem ??= await context.ExpenseItems.FirstOrDefaultAsync(m => m.Id == Id);
 
         if (ExpenseItem is null)
         {
             NavigationManager.NotFound();
         }
+
+        parent = context.ExpenseItems.FirstOrDefault(e => e.Id == ExpenseItem!.ParentId);
     }
 
     // To protect from overposting attacks, enable the specific properties you want to bind to.
@@ -83,7 +88,7 @@ else
             }
         }
 
-        NavigationManager.NavigateTo("/expenseitems");
+        NavigationManager.NavigateTo("/expenseitemstree");
     }
 
     private bool ExpenseItemExists(string id)
@@ -91,4 +96,6 @@ else
         using var context = DbFactory.CreateDbContext();
         return context.ExpenseItems.Any(e => e.Id == id);
     }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }

@@ -1,6 +1,7 @@
 ﻿@using CompanyExpenses.Abstractions
 @using CompanyExpenses.Common
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using System.Threading.Tasks
 @inject ProtectedSessionStorage ProtectedSessionStore
 @typeparam TNode where TNode : class, ITree<TNode>
 
@@ -47,12 +48,33 @@
 	private List<TNode>? draggedNodeDescendants;
 	private TNode? hoveredNode;
 
-	protected override void OnInitialized()
+	protected override async Task OnInitializedAsync()
 	{
 		if (Items is null)
 			return;
 
+		await RestoreTreeState();
+
 		tree = TreeHelper.BuildTree(Items);
+	}
+
+	private async Task RestoreTreeState()
+	{
+		if (Items is null)
+			return;
+
+		var storageResult = await ProtectedSessionStore.GetAsync<TreeState>(nameof(treeState));
+
+		if (storageResult.Success && storageResult.Value is not null)
+		{
+			treeState = storageResult.Value;
+
+			foreach (var item in Items)
+			{
+				if (treeState.ExpandedNodes.Contains(item.Id))
+					item.Expanded = true;
+			}
+		}
 	}
 
 	private async Task SelectNode(TNode node)
