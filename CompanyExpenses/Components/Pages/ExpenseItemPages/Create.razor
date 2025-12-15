@@ -1,10 +1,12 @@
 ﻿@page "/expenseitems/create"
 @using CompanyExpenses.Data
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
-	@using CompanyExpenses.Domain
-	@implements IAsyncDisposable
+@using CompanyExpenses.Domain
+@implements IAsyncDisposable
 @inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
 @inject NavigationManager NavigationManager
+@attribute [Authorize]
 
 <PageTitle>Создать</PageTitle>
 

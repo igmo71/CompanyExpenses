@@ -2,11 +2,13 @@
 @using CompanyExpenses.Common
 @using CompanyExpenses.Components.Common.TreeViewComponent
 @using CompanyExpenses.Data
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using CompanyExpenses.Domain
 @implements IAsyncDisposable
 @inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
 @inject NavigationManager NavigationManager
+@attribute [Authorize]
 
 <PageTitle>Удалить</PageTitle>
 
