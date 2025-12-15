@@ -1,0 +1,63 @@
+﻿@page "/companystructurestree"
+@using CompanyExpenses.Components.Common.TreeViewComponent
+@using CompanyExpenses.Data
+@using CompanyExpenses.Domain
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@implements IAsyncDisposable
+@inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<h3>Структура Компании</h3>
+
+<div class="row">
+	<div class="col-auto">
+		<TreeView TNode="CompanyStructure" Items="items" OmItemCreate="CreateItem" OmItemSelected="ItemSelected" OmItemChanged="ItemChanged">
+			<Template Context="item">
+				<div class="btn-group dropend">
+					<div class="btn py-1 text-start">@item.Name</div>
+					<div class="btn dropdown-toggle py-1" data-bs-toggle="dropdown"></div>
+					<ul class="dropdown-menu">
+						<li><a class="dropdown-item" href="/companystructures/create?ParentId=@item.Id"><i class="bi bi-node-plus text-primary"></i> Добавить</a></li>
+						<li><hr class="dropdown-divider"></li>
+						<li><a class="dropdown-item" href="/companystructures/edit?Id=@item.Id"><i class="bi bi-pencil text-warning"></i> Изменить</a></li>
+						<li><a class="dropdown-item" href="/companystructures/delete?Id=@item.Id"><i class="bi bi-trash3 text-danger"></i> Удалить</a></li>
+					</ul>
+				</div>
+			</Template>
+		</TreeView>
+	</div>
+</div>
+
+@code {
+	private ApplicationDbContext context = default!;
+	private List<CompanyStructure>? items;
+	private CompanyStructure? selectedItem;
+
+	protected override void OnInitialized()
+	{
+		context = DbFactory.CreateDbContext();
+
+		items = context.CompanyStructure.ToList();
+	}
+
+	private void ItemSelected(CompanyStructure item)
+	{
+		selectedItem = item;
+	}
+
+	private void ItemChanged(CompanyStructure item)
+	{
+		context.CompanyStructure.Update(item);
+
+		context.SaveChanges();
+	}
+
+	private void CreateItem()
+	{
+		NavigationManager.NavigateTo("companystructures/create");
+	}
+
+	public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

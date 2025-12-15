@@ -1,4 +1,4 @@
-﻿@page "/expenseitems/edit"
+﻿@page "/companystructures/edit"
 @using CompanyExpenses.Data
 @using Microsoft.EntityFrameworkCore
 @using CompanyExpenses.Domain
@@ -10,9 +10,9 @@
 
 <h1>Изменить</h1>
 
-<h2>Статью Затрат</h2>
+<h2>Подразделение Компании</h2>
 <hr />
-@if (ExpenseItem is null)
+@if (CompanyStructure is null)
 {
     <p><em>Loading...</em></p>
 }
@@ -20,21 +20,21 @@ else
 {
     <div class="row">
         <div class="col-md-4">
-            <EditForm method="post" Model="ExpenseItem" OnValidSubmit="UpdateExpenseItem" FormName="edit" Enhance>
+            <EditForm method="post" Model="CompanyStructure" OnValidSubmit="UpdateCompanyStructure" FormName="edit" Enhance>
                 <DataAnnotationsValidator />
                 <ValidationSummary role="alert"/>
-                <input type="hidden" name="ExpenseItem.Id" value="@ExpenseItem.Id" />
+                <input type="hidden" name="CompanyStructure.Id" value="@CompanyStructure.Id" />
                 <div class="mb-3">
                     <label for="parentid" class="form-label">@(parent is null ? string.Empty : "Родительская статья:")</label>
                     <input id="parentid" value="@(parent is null ? "Это верхний уровень" : parent?.Name)" class="form-control" disabled />
                 </div>
                 <div class="mb-3">
-                    <label for="name" class="form-label">Эта статья:</label>
-                    <InputText id="name" @bind-Value="ExpenseItem.Name" class="form-control" />
-                    <ValidationMessage For="() => ExpenseItem.Name" class="text-danger" />
+                    <label for="name" class="form-label">Name:</label>
+                    <InputText id="name" @bind-Value="CompanyStructure.Name" class="form-control" />
+                    <ValidationMessage For="() => CompanyStructure.Name" class="text-danger" />
                 </div>
                 <button type="submit" class="btn btn-primary">Сохранить</button> |
-                <a href="/expenseitemstree">Назад</a>
+                <a href="/companystructurestree">Назад</a>  
             </EditForm>
         </div>
     </div>
@@ -45,31 +45,31 @@ else
     private string? Id { get; set; }
 
     [SupplyParameterFromForm]
-    private ExpenseItem? ExpenseItem { get; set; }
+    private CompanyStructure? CompanyStructure { get; set; }
 
     private ApplicationDbContext context = default!;
-    private ExpenseItem? parent;
+    private CompanyStructure? parent;
 
     protected override async Task OnInitializedAsync()
     {
         context = DbFactory.CreateDbContext();
 
-        ExpenseItem ??= await context.ExpenseItems.FirstOrDefaultAsync(m => m.Id == Id);
+        CompanyStructure ??= await context.CompanyStructure.FirstOrDefaultAsync(m => m.Id == Id);
 
-        if (ExpenseItem is null)
+        if (CompanyStructure is null)
         {
             NavigationManager.NotFound();
         }
 
-        parent = context.ExpenseItems.FirstOrDefault(e => e.Id == ExpenseItem!.ParentId);
+        parent = context.CompanyStructure.FirstOrDefault(e => e.Id == CompanyStructure!.ParentId);
     }
 
     // To protect from overposting attacks, enable the specific properties you want to bind to.
     // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
-    private async Task UpdateExpenseItem()
+    private async Task UpdateCompanyStructure()
     {
         using var context = DbFactory.CreateDbContext();
-        context.Attach(ExpenseItem!).State = EntityState.Modified;
+        context.Attach(CompanyStructure!).State = EntityState.Modified;
 
         try
         {
@@ -77,7 +77,7 @@ else
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!ExpenseItemExists(ExpenseItem!.Id))
+            if (!CompanyStructureExists(CompanyStructure!.Id))
             {
                 NavigationManager.NotFound();
             }
@@ -87,13 +87,13 @@ else
             }
         }
 
-        NavigationManager.NavigateTo("/expenseitemstree");
+        NavigationManager.NavigateTo("/companystructurestree");
     }
 
-    private bool ExpenseItemExists(string id)
+    private bool CompanyStructureExists(string id)
     {
         using var context = DbFactory.CreateDbContext();
-        return context.ExpenseItems.Any(e => e.Id == id);
+        return context.CompanyStructure.Any(e => e.Id == id);
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();

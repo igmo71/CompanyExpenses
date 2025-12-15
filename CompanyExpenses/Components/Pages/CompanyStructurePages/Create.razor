@@ -1,8 +1,8 @@
-﻿@page "/expenseitems/create"
+﻿@page "/companystructures/create"
 @using CompanyExpenses.Data
 @using Microsoft.EntityFrameworkCore
-	@using CompanyExpenses.Domain
-	@implements IAsyncDisposable
+@using CompanyExpenses.Domain
+@implements IAsyncDisposable
 @inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
 @inject NavigationManager NavigationManager
 
@@ -10,24 +10,24 @@
 
 <h1>Создать</h1>
 
-<h2>Статью Расходов</h2>
+<h2>Подразделение Компании</h2>
 <hr />
 <div class="row">
 	<div class="col-md-4">
-		<EditForm method="post" Model="ExpenseItem" OnValidSubmit="AddExpenseItem" FormName="create" Enhance>
+		<EditForm method="post" Model="CompanyStructure" OnValidSubmit="AddCompanyStructure" FormName="create" Enhance>
 			<DataAnnotationsValidator />
 			<ValidationSummary class="text-danger" role="alert" />
 			<div class="mb-3">
-				<label for="parentid" class="form-label">@(parent is null ? string.Empty : "Родительская статья:")</label>
+				<label for="parentid" class="form-label">@(parent is null ? string.Empty : "Родительское подразделение:")</label>
 				<input id="parentid" value="@(parent is null ? "Это верхний уровень" : parent?.Name)" class="form-control" disabled />
 			</div>
 			<div class="mb-3">
-				<label for="name" class="form-label">Новая статья:</label>
-				<InputText id="name" @bind-Value="ExpenseItem.Name" class="form-control" />
-				<ValidationMessage For="() => ExpenseItem.Name" class="text-danger" />
+				<label for="name" class="form-label">Новое подразделение:</label>
+				<InputText id="name" @bind-Value="CompanyStructure.Name" class="form-control" />
+				<ValidationMessage For="() => CompanyStructure.Name" class="text-danger" />
 			</div>
 			<button type="submit" class="btn btn-primary">Создать</button> |
-			<a href="/expenseitemstree">Назад</a>
+			<a href="/companystructurestree">Назад</a>
 		</EditForm>
 	</div>
 </div>
@@ -37,17 +37,17 @@
 	public string? ParentId { get; set; }
 
 	[SupplyParameterFromForm]
-	private ExpenseItem ExpenseItem { get; set; } = default!;
+	private CompanyStructure CompanyStructure { get; set; } = default!;
 
 	private ApplicationDbContext context = default!;
-	private ExpenseItem? parent;
+	private CompanyStructure? parent;
 
 
 	protected override void OnInitialized()
 	{
 		context = DbFactory.CreateDbContext();
-		parent = context.ExpenseItems.FirstOrDefault(e => e.Id == ParentId);
-		ExpenseItem ??= new()
+		parent = context.CompanyStructure.FirstOrDefault(e => e.Id == ParentId);
+		CompanyStructure ??= new()
 		{
 			Id = Guid.CreateVersion7().ToString(),
 			ParentId = ParentId
@@ -55,11 +55,11 @@
 	}
 
 	// To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
-	private async Task AddExpenseItem()
+	private async Task AddCompanyStructure()
 	{
-		context.ExpenseItems.Add(ExpenseItem);
+		context.CompanyStructure.Add(CompanyStructure);
 		await context.SaveChangesAsync();
-		NavigationManager.NavigateTo("/expenseitemstree");
+		NavigationManager.NavigateTo("/companystructurestree");
 	}
 
 	public async ValueTask DisposeAsync() => await context.DisposeAsync();

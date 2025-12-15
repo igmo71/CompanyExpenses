@@ -1,0 +1,82 @@
+﻿@page "/companystructures/delete"
+@using CompanyExpenses.Common
+@using CompanyExpenses.Data
+@using Microsoft.EntityFrameworkCore
+@using CompanyExpenses.Domain
+@implements IAsyncDisposable
+@inject IDbContextFactory<CompanyExpenses.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Удалить</PageTitle>
+
+<h1>Удалить</h1>
+
+<p class="text-danger">Вы увеены, что хотите удалить? Удалятся и все дочерние!</p>
+<div>
+	<h2>Подразделение Компании</h2>
+	<hr />
+	@if (item is null)
+	{
+		<p><em>Loading...</em></p>
+	}
+	else
+	{
+		<dl class="row">
+			<dt class="col-sm-2">Родительское подразделение</dt>
+			<dd class="col-sm-10">@(parent is null ? "Это верхний уровень" : parent?.Name)</dd>
+		</dl>
+		<dl class="row">
+			<dt class="col-sm-2">Подразделение</dt>
+			<dd class="col-sm-10">@item.Name</dd>
+		</dl>
+		<EditForm method="post" Model="item" OnValidSubmit="DeleteCompanyStructure" FormName="delete" Enhance>
+			<button type="submit" class="btn btn-danger" disabled="@(item is null)">Удалить</button> |
+			<a href="/companystructurestree">Назад</a>
+		</EditForm>
+	}
+</div>
+
+@code {
+	[SupplyParameterFromQuery]
+	private string? Id { get; set; }
+
+	private ApplicationDbContext context = default!;
+	private List<CompanyStructure>? items;
+	private CompanyStructure? item;
+	private CompanyStructure? parent;
+	private List<CompanyStructure>? children;
+
+	protected override async Task OnInitializedAsync()
+	{
+		context = DbFactory.CreateDbContext();
+
+		item = await context.CompanyStructure.FirstOrDefaultAsync(m => m.Id == Id);
+
+		if (item is null)
+		{
+			NavigationManager.NotFound();
+		}
+
+		parent = context.CompanyStructure.FirstOrDefault(e => e.Id == item!.ParentId);
+
+		items = await context.CompanyStructure.ToListAsync();
+
+		if (items?.Count == 0)
+		{
+			NavigationManager.NotFound();
+		}
+
+		children = TreeHelper.GetDescendantsOf(item!, items!);
+	}
+
+	private async Task DeleteCompanyStructure()
+	{
+		if (children?.Count > 0)
+			context.CompanyStructure.RemoveRange(children);
+		context.CompanyStructure.Remove(item!);
+		await context.SaveChangesAsync();
+		NavigationManager.NavigateTo("/companystructurestree");
+	}
+
+	public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}
